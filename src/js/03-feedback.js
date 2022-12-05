@@ -1,32 +1,58 @@
 import throttle from 'lodash.throttle';
 
-const form = document.querySelector('.feedback-form');
-const email = document.querySelector('input');
-const message = document.querySelector('textarea');
+const STORAGE_KEY = 'feedback-form-state';
 
-const FORM_KEY = 'feedback-form-state';
+const refs = {
+  form: document.querySelector('.feedback-form'),
+  textarea: document.querySelector('.feedback-form textarea'),
+  input: document.querySelector('.feedback-form input'),
+  button: document.querySelector('.feedback-form button'),
+};
 
-getData();
+const formData = {
+  email: '',
+  message: '',
+};
+let currentFormData = formData;
 
-form.addEventListener('input', throttle(onInputData, 500));
-function onInputData(evt) {
-  const objectData = { email: email.value, message: message.value };
-  localStorage.setItem(FORM_KEY, JSON.stringify(objectData));
+resultForm();
+
+refs.form.addEventListener('input', throttle(onFormInput, 500));
+refs.form.addEventListener('submit', onFormSubmit);
+refs.button.addEventListener('click', onBtnSubmit);
+
+function onFormInput(e) {
+  currentFormData = {
+    ...currentFormData,
+    [e.target.name]: e.target.value,
+  };
+  const value = JSON.stringify(currentFormData);
+  localStorage.setItem(STORAGE_KEY, value);
 }
 
-form.addEventListener('submit', onSubmitBtn);
-function onSubmitBtn(evt) {
-  evt.preventDefault();
-  const savedData = JSON.parse(localStorage.getItem(FORM_KEY));
-  console.log(savedData);
-  evt.currentTarget.reset();
-  localStorage.removeItem(FORM_KEY);
+function onFormSubmit(e) {
+  e.preventDefault();
+  currentFormData = formData;
+  const value = JSON.stringify(currentFormData);
+  localStorage.setItem(STORAGE_KEY, value);
+  refs.form.reset();
+  localStorage.removeItem('feedback-form-state');
 }
 
-function getData() {
-  const reservedData = JSON.parse(localStorage.getItem(FORM_KEY));
-  if (reservedData) {
-    email.value = reservedData.email;
-    message.value = reservedData.message;
+function populateMessageEmail() {
+  currentFormData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || formData;
+  return currentFormData;
+}
+
+function resultForm() {
+  const { email, message } = populateMessageEmail();
+  refs.input.value = email;
+  refs.textarea.value = message;
+}
+
+function onBtnSubmit() {
+  if (refs.textarea.value === '' || refs.input.value === '') {
+    return alert('Your form has empty fields. Add information and try again.');
   }
+  console.log(currentFormData);
 }
